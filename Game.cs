@@ -42,11 +42,17 @@ namespace Physic_Engine
             this.IsVisible = true;
             GL.ClearColor(new Color4(0.3f, 0.4f, 0.5f, 1.0f));
 
+
+            float x = 384f;
+            float y = 400f;
+            float w = 512f;
+            float h = 256f;
+
             float[] vertices = new float[]{
-                -0.5f, 0.5f, 0f, 1f, 0f, 0f, 1f,     // vertex 0  position(3 floats) color(4 floats)
-                0.5f, 0.5f, 0f, 0f, 1f, 0f, 1f,      // vertex 1
-                0.5f, -0.5f, 0f, 0f, 0f, 1f, 1f,     // vertex 2
-                -0.5f, -0.5f, 0f, 1f, 1f, 0f, 1f,    // vertex 3
+                x, y + h, 0f, 1f, 0f, 0f, 1f,          // vertex 0  position(3 floats) color(4 floats)
+                x + w, y + h, 0f, 0f, 1f, 0f, 1f,      // vertex 1
+                x + w, y, 0f, 0f, 0f, 1f, 1f,          // vertex 2
+                x, y, 0f, 1f, 1f, 0f, 1f,              // vertex 3
             };
 
             int[] indeces = new int[] {
@@ -78,6 +84,9 @@ namespace Physic_Engine
             string vertexShaderCode =
                 @"
                 #version 330 core
+
+                uniform vec2 ViewportSize;
+
                 layout (location = 0) in vec3 aPosition;
                 layout (location = 1) in vec4 aColor;
 
@@ -85,8 +94,11 @@ namespace Physic_Engine
 
                 void main()
                 {
+                    float nx = (aPosition.x / ViewportSize.x) * 2.0 - 1.0f;
+                    float ny = (aPosition.y / ViewportSize.y) * 2.0 - 1.0f;
+                    gl_Position = vec4(nx, ny, 0f, 1.0f);
+
                     vColor = aColor;
-                    gl_Position = vec4(aPosition.x, aPosition.y, aPosition.z, 1.0);
                 }";
 
             string pixelShaderCode =
@@ -105,9 +117,17 @@ namespace Physic_Engine
             GL.ShaderSource(vertexShaderHandle, vertexShaderCode);
             GL.CompileShader(vertexShaderHandle);
 
+            // Check for errors in the vertex shader
+            string vertexShaderInfo = GL.GetShaderInfoLog(vertexShaderHandle);
+            if (vertexShaderInfo != string.Empty) Console.WriteLine(vertexShaderInfo);
+
             int pixelShaderHandle = GL.CreateShader(ShaderType.FragmentShader);
             GL.ShaderSource(pixelShaderHandle, pixelShaderCode);
             GL.CompileShader(pixelShaderHandle);
+
+            // Check for errors in the pixel shader
+            string pixelShaderInfo = GL.GetShaderInfoLog(vertexShaderHandle);
+            if (pixelShaderInfo != string.Empty) Console.WriteLine(pixelShaderInfo);
 
             this.shaderProgramHandle = GL.CreateProgram();
 
@@ -121,6 +141,15 @@ namespace Physic_Engine
 
             GL.DeleteShader(vertexShaderHandle);
             GL.DeleteShader(pixelShaderHandle);
+
+            int[] viewport = new int[4];
+            GL.GetInteger(GetPName.Viewport, viewport);
+
+            GL.UseProgram(this.shaderProgramHandle);
+            int ViewportSizeUniformLocation = GL.GetUniformLocation(this.shaderProgramHandle, "ViewportSize");
+            GL.Uniform2(ViewportSizeUniformLocation, (float)viewport[2], (float)viewport[3]);
+            GL.UseProgram(0);
+
 
             base.OnLoad();
         }
