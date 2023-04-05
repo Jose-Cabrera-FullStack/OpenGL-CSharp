@@ -9,6 +9,7 @@ namespace Physic_Engine
     public class Game : GameWindow
     {
         private int vertextBufferHandle;
+        private int indexBufferHandle;
         private int shaderProgramHandle;
         private int vertexArrayHandle;
 
@@ -42,9 +43,14 @@ namespace Physic_Engine
             GL.ClearColor(new Color4(0.3f, 0.4f, 0.5f, 1.0f));
 
             float[] vertices = new float[]{
-                0f, 0.5f, 0f, 1f, 0f, 0f, 1f, // vertex 0
-                0.5f, -0.5f, 0f, 0f, 1f, 0f, 1f, // vertex 1
-                -0.5f, -0.5f, 0f, 0f, 0f, 1f, 1f, // vertex 2
+                -0.5f, 0.5f, 0f, 1f, 0f, 0f, 1f,     // vertex 0  position(3 floats) color(4 floats)
+                0.5f, 0.5f, 0f, 0f, 1f, 0f, 1f,      // vertex 1
+                0.5f, -0.5f, 0f, 0f, 0f, 1f, 1f,     // vertex 2
+                -0.5f, -0.5f, 0f, 1f, 1f, 0f, 1f,    // vertex 3
+            };
+
+            int[] indeces = new int[] {
+                0, 1, 2, 0, 2, 3
             };
 
 
@@ -52,6 +58,11 @@ namespace Physic_Engine
             GL.BindBuffer(BufferTarget.ArrayBuffer, this.vertextBufferHandle);
             GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * sizeof(float), vertices, BufferUsageHint.StaticDraw);
             GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
+
+            this.indexBufferHandle = GL.GenBuffer();
+            GL.BindBuffer(BufferTarget.ElementArrayBuffer, this.indexBufferHandle);
+            GL.BufferData(BufferTarget.ElementArrayBuffer, indeces.Length * sizeof(int), indeces, BufferUsageHint.StaticDraw);
+            GL.BindBuffer(BufferTarget.ElementArrayBuffer, 0);
 
             this.vertexArrayHandle = GL.GenVertexArray();
             GL.BindVertexArray(this.vertexArrayHandle);
@@ -119,6 +130,9 @@ namespace Physic_Engine
             GL.BindVertexArray(0);
             GL.DeleteVertexArray(this.vertexArrayHandle);
 
+            GL.BindBuffer(BufferTarget.ElementArrayBuffer, 0);
+            GL.DeleteBuffer(this.indexBufferHandle);
+
             GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
             GL.DeleteBuffer(this.vertextBufferHandle);
 
@@ -139,7 +153,8 @@ namespace Physic_Engine
 
             GL.UseProgram(this.shaderProgramHandle);
             GL.BindVertexArray(this.vertexArrayHandle);
-            GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
+            GL.BindBuffer(BufferTarget.ElementArrayBuffer, this.indexBufferHandle);
+            GL.DrawElements(PrimitiveType.Triangles, 6, DrawElementsType.UnsignedInt, 0);
 
             this.Context.SwapBuffers();
             base.OnRenderFrame(args);
