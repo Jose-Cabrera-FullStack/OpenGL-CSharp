@@ -48,21 +48,30 @@ namespace Physic_Engine
             float w = 512f;
             float h = 256f;
 
-            float[] vertices = new float[]{
-                x, y + h, 0f, 1f, 0f, 0f, 1f,          // vertex 0  position(3 floats) color(4 floats)
-                x + w, y + h, 0f, 0f, 1f, 0f, 1f,      // vertex 1
-                x + w, y, 0f, 0f, 0f, 1f, 1f,          // vertex 2
-                x, y, 0f, 1f, 1f, 0f, 1f,              // vertex 3
+            // float[] vertices = new float[]{
+            //     x, y + h, 1f, 0f, 0f, 1f,          // vertex 0  position(3 floats) color(4 floats)
+            //     x + w, y + h, 0f, 1f, 0f, 1f,      // vertex 1
+            //     x + w, y, 0f, 0f, 1f, 1f,          // vertex 2
+            //     x, y, 1f, 1f, 0f, 1f,              // vertex 3
+            // };
+
+            VertexPositionColor[] vertices = new VertexPositionColor[]
+            {
+                new VertexPositionColor(new Vector2(x, y + h), new Color4(1f, 0f, 0f, 1f)),
+                new VertexPositionColor(new Vector2(x + w, y + h), new Color4(0f, 1f, 0f, 1f)),
+                new VertexPositionColor(new Vector2(x + w, y ), new Color4(0f, 0f, 1f, 1f)),
+                new VertexPositionColor(new Vector2(x, y), new Color4(1f, 1f, 0f, 1f)),
             };
 
             int[] indeces = new int[] {
                 0, 1, 2, 0, 2, 3
             };
 
+            int vertexSizeInBytes = VertexPositionColor.VertexInfo.SizeInBytes;
 
             this.vertextBufferHandle = GL.GenBuffer();
             GL.BindBuffer(BufferTarget.ArrayBuffer, this.vertextBufferHandle);
-            GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * sizeof(float), vertices, BufferUsageHint.StaticDraw);
+            GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * vertexSizeInBytes, vertices, BufferUsageHint.StaticDraw);
             GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
 
             this.indexBufferHandle = GL.GenBuffer();
@@ -74,10 +83,15 @@ namespace Physic_Engine
             GL.BindVertexArray(this.vertexArrayHandle);
 
             GL.BindBuffer(BufferTarget.ArrayBuffer, this.vertextBufferHandle);
-            GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 7 * sizeof(float), 0);
-            GL.VertexAttribPointer(1, 4, VertexAttribPointerType.Float, false, 7 * sizeof(float), 3 * sizeof(float));
-            GL.EnableVertexAttribArray(0);
-            GL.EnableVertexAttribArray(1);
+
+            VertexAttribute attr0 = VertexPositionColor.VertexInfo.VertexAttributes[0];
+            VertexAttribute attr1 = VertexPositionColor.VertexInfo.VertexAttributes[1];
+
+            GL.VertexAttribPointer(attr0.Index, attr0.ComponentCount, VertexAttribPointerType.Float, false, vertexSizeInBytes, attr0.Offset);
+            GL.VertexAttribPointer(attr1.Index, attr1.ComponentCount, VertexAttribPointerType.Float, false, vertexSizeInBytes, attr1.Offset);
+
+            GL.EnableVertexAttribArray(attr0.Index);
+            GL.EnableVertexAttribArray(attr1.Index);
 
             GL.BindVertexArray(0);
 
@@ -87,7 +101,7 @@ namespace Physic_Engine
 
             uniform vec2 ViewportSize;
 
-            layout (location = 0) in vec3 aPosition;
+            layout (location = 0) in vec2 aPosition;
             layout (location = 1) in vec4 aColor;
 
             out vec4 vColor;
@@ -189,6 +203,24 @@ namespace Physic_Engine
 
             this.Context.SwapBuffers();
             base.OnRenderFrame(args);
+        }
+    }
+
+    public readonly struct VertexPositionTexture
+    {
+        public readonly Vector2 Position;
+        public readonly Vector2 TexCoord;
+
+        public static readonly VertexInfo VertexInfo = new VertexInfo(
+            typeof(VertexPositionTexture),
+            new VertexAttribute("Position", 0, 2, 0),
+            new VertexAttribute("TexCoord", 1, 2, 2 * sizeof(float))
+        );
+
+        public VertexPositionTexture(Vector2 position, Vector2 texCoord)
+        {
+            this.Position = position;
+            this.TexCoord = texCoord;
         }
     }
 }
