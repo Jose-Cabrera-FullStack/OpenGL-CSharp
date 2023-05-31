@@ -82,36 +82,38 @@ namespace Physic_Engine
             GL.BindVertexArray(0);
 
             string vertexShaderCode =
-                @"
-                #version 330 core
+            @"
+            #version 330 core
 
-                uniform vec2 ViewportSize;
+            uniform vec2 ViewportSize;
 
-                layout (location = 0) in vec3 aPosition;
-                layout (location = 1) in vec4 aColor;
+            layout (location = 0) in vec3 aPosition;
+            layout (location = 1) in vec4 aColor;
 
-                out vec4 vColor;
+            out vec4 vColor;
 
-                void main()
-                {
-                    float nx = (aPosition.x / ViewportSize.x) * 2.0 - 1.0f;
-                    float ny = (aPosition.y / ViewportSize.y) * 2.0 - 1.0f;
-                    gl_Position = vec4(nx, ny, 0f, 1.0f);
+            void main()
+            {
+                float nx = aPosition.x / ViewportSize.x * 2 - 1;
+                float ny = aPosition.y / ViewportSize.y * 2 - 1;
+                gl_Position = vec4(nx, ny, 0, 1);
 
-                    vColor = aColor;
-                }";
+                vColor = aColor;
+            }
+            ";
 
             string pixelShaderCode =
-                @"
-                #version 330 core
+            @"
+            #version 330 core
 
-                in vec4 vColor;
+            in vec4 vColor;
 
-                out vec4 pixelColor;
-                void main()
-                {
-                    pixelColor = vColor;
-                }";
+            out vec4 pixelColor;
+            void main()
+            {
+                pixelColor = vColor;
+            }";
+
 
             int vertexShaderHandle = GL.CreateShader(ShaderType.VertexShader);
             GL.ShaderSource(vertexShaderHandle, vertexShaderCode);
@@ -126,7 +128,7 @@ namespace Physic_Engine
             GL.CompileShader(pixelShaderHandle);
 
             // Check for errors in the pixel shader
-            string pixelShaderInfo = GL.GetShaderInfoLog(vertexShaderHandle);
+            string pixelShaderInfo = GL.GetShaderInfoLog(pixelShaderHandle);
             if (pixelShaderInfo != string.Empty) Console.WriteLine(pixelShaderInfo);
 
             this.shaderProgramHandle = GL.CreateProgram();
