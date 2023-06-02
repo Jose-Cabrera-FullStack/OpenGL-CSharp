@@ -8,7 +8,7 @@ namespace Physic_Engine
 {
     public class Game : GameWindow
     {
-        private int vertextBufferHandle;
+        private VertexBuffer vertexBuffer;
         private int indexBufferHandle;
         private int shaderProgramHandle;
         private int vertexArrayHandle;
@@ -48,13 +48,6 @@ namespace Physic_Engine
             float w = 512f;
             float h = 256f;
 
-            // float[] vertices = new float[]{
-            //     x, y + h, 1f, 0f, 0f, 1f,          // vertex 0  position(3 floats) color(4 floats)
-            //     x + w, y + h, 0f, 1f, 0f, 1f,      // vertex 1
-            //     x + w, y, 0f, 0f, 1f, 1f,          // vertex 2
-            //     x, y, 1f, 1f, 0f, 1f,              // vertex 3
-            // };
-
             VertexPositionColor[] vertices = new VertexPositionColor[]
             {
                 new VertexPositionColor(new Vector2(x, y + h), new Color4(1f, 0f, 0f, 1f)),
@@ -67,12 +60,11 @@ namespace Physic_Engine
                 0, 1, 2, 0, 2, 3
             };
 
-            int vertexSizeInBytes = VertexPositionColor.VertexInfo.SizeInBytes;
 
-            this.vertextBufferHandle = GL.GenBuffer();
-            GL.BindBuffer(BufferTarget.ArrayBuffer, this.vertextBufferHandle);
-            GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * vertexSizeInBytes, vertices, BufferUsageHint.StaticDraw);
-            GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
+            this.vertexBuffer = new VertexBuffer(VertexPositionColor.VertexInfo, vertices.Length, false);
+            this.vertexBuffer.SetData(vertices, vertices.Length);
+
+            int vertexSizeInBytes = VertexPositionColor.VertexInfo.SizeInBytes;
 
             this.indexBufferHandle = GL.GenBuffer();
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, this.indexBufferHandle);
@@ -82,7 +74,7 @@ namespace Physic_Engine
             this.vertexArrayHandle = GL.GenVertexArray();
             GL.BindVertexArray(this.vertexArrayHandle);
 
-            GL.BindBuffer(BufferTarget.ArrayBuffer, this.vertextBufferHandle);
+            GL.BindBuffer(BufferTarget.ArrayBuffer, this.vertexBuffer.VertexBufferHandle);
 
             VertexAttribute attr0 = VertexPositionColor.VertexInfo.VertexAttributes[0];
             VertexAttribute attr1 = VertexPositionColor.VertexInfo.VertexAttributes[1];
@@ -178,8 +170,8 @@ namespace Physic_Engine
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, 0);
             GL.DeleteBuffer(this.indexBufferHandle);
 
-            GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
-            GL.DeleteBuffer(this.vertextBufferHandle);
+
+            this.vertexBuffer?.Dispose();
 
             GL.UseProgram(0);
             GL.DeleteProgram(this.shaderProgramHandle);
