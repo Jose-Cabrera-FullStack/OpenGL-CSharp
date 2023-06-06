@@ -30,23 +30,13 @@ namespace Physic_Engine
             this.VertexCount = vertexCount;
             this.IsStatic = isStatic;
 
-            BufferUsageHint hint = BufferUsageHint.StaticDraw; // StaticDraw: the data will most likely not change at all or very rarely.
-
-            if (!this.IsStatic)
-            {
-                hint = BufferUsageHint.StreamDraw;
-            }
-
             int vertexSizeInBytes = VertexPositionColor.VertexInfo.SizeInBytes;
 
             this.VertexBufferHandle = GL.GenBuffer();
             GL.BindBuffer(BufferTarget.ArrayBuffer, this.VertexBufferHandle); // Bind the buffer to the ArrayBuffer target so that we can use it.
-            GL.BufferData(BufferTarget.ArrayBuffer, this.VertexCount * this.VertexInfo.SizeInBytes, IntPtr.Zero, hint);
+            GL.BufferData(BufferTarget.ArrayBuffer, this.VertexCount * this.VertexInfo.SizeInBytes, IntPtr.Zero, this.IsStatic ? BufferUsageHint.StaticDraw : BufferUsageHint.StreamDraw);
             GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
         }
-
-
-
 
         ~VertexBuffer()
         {

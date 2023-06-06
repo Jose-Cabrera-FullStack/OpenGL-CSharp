@@ -9,6 +9,7 @@ namespace Physic_Engine
     public class Game : GameWindow
     {
         private VertexBuffer vertexBuffer;
+        private IndexBuffer indexBuffer;
         private int indexBufferHandle;
         private int shaderProgramHandle;
         private int vertexArrayHandle;
@@ -64,12 +65,10 @@ namespace Physic_Engine
             this.vertexBuffer = new VertexBuffer(VertexPositionColor.VertexInfo, vertices.Length, false);
             this.vertexBuffer.SetData(vertices, vertices.Length);
 
-            int vertexSizeInBytes = VertexPositionColor.VertexInfo.SizeInBytes;
+            this.indexBuffer = new IndexBuffer(indeces.Length, true);
+            this.indexBuffer.SetData(indeces, indeces.Length);
 
-            this.indexBufferHandle = GL.GenBuffer();
-            GL.BindBuffer(BufferTarget.ElementArrayBuffer, this.indexBufferHandle);
-            GL.BufferData(BufferTarget.ElementArrayBuffer, indeces.Length * sizeof(int), indeces, BufferUsageHint.StaticDraw);
-            GL.BindBuffer(BufferTarget.ElementArrayBuffer, 0);
+            int vertexSizeInBytes = VertexPositionColor.VertexInfo.SizeInBytes;
 
             this.vertexArrayHandle = GL.GenVertexArray();
             GL.BindVertexArray(this.vertexArrayHandle);
@@ -167,10 +166,7 @@ namespace Physic_Engine
             GL.BindVertexArray(0);
             GL.DeleteVertexArray(this.vertexArrayHandle);
 
-            GL.BindBuffer(BufferTarget.ElementArrayBuffer, 0);
-            GL.DeleteBuffer(this.indexBufferHandle);
-
-
+            this.indexBuffer?.Dispose();
             this.vertexBuffer?.Dispose();
 
             GL.UseProgram(0);
@@ -190,7 +186,7 @@ namespace Physic_Engine
 
             GL.UseProgram(this.shaderProgramHandle);
             GL.BindVertexArray(this.vertexArrayHandle);
-            GL.BindBuffer(BufferTarget.ElementArrayBuffer, this.indexBufferHandle);
+            GL.BindBuffer(BufferTarget.ElementArrayBuffer, this.indexBuffer.IndexBufferHandle);
             GL.DrawElements(PrimitiveType.Triangles, 6, DrawElementsType.UnsignedInt, 0);
 
             this.Context.SwapBuffers();
