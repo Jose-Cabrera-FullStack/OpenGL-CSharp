@@ -8,11 +8,13 @@ namespace Physic_Engine
 {
     public class Game : GameWindow
     {
-        private VertexBuffer vertexBuffer;
         private IndexBuffer indexBuffer;
-        private int indexBufferHandle;
+        private VertexBuffer vertexBuffer;
+        private VertexArray vertexArray;
         private int shaderProgramHandle;
-        private int vertexArrayHandle;
+
+        private int vertexCount;
+        private int IndexCount;
 
         public Game(int width = 1280, int height = 768, string title = "Physic Engine") : base(
             GameWindowSettings.Default,
@@ -41,50 +43,62 @@ namespace Physic_Engine
         {
 
             this.IsVisible = true;
-            GL.ClearColor(new Color4(0.3f, 0.4f, 0.5f, 1.0f));
+            // GL.ClearColor(new Color4(0.3f, 0.4f, 0.5f, 1.0f));
+            GL.ClearColor(0.8f, 0.8f, 0.8f, 1.0f); // Background color
 
+            Random rand = new Random();
 
-            float x = 384f;
-            float y = 400f;
-            float w = 512f;
-            float h = 256f;
+            int windowWidth = this.ClientSize.X;
+            int windowHeight = this.ClientSize.Y;
 
-            VertexPositionColor[] vertices = new VertexPositionColor[]
+            int boxCount = 1000;
+
+            VertexPositionColor[] vertices = new VertexPositionColor[boxCount * 4];
+            this.vertexCount = 0;
+
+            for (int i = 0; i < boxCount; i++)
             {
-                new VertexPositionColor(new Vector2(x, y + h), new Color4(1f, 0f, 0f, 1f)),
-                new VertexPositionColor(new Vector2(x + w, y + h), new Color4(0f, 1f, 0f, 1f)),
-                new VertexPositionColor(new Vector2(x + w, y ), new Color4(0f, 0f, 1f, 1f)),
-                new VertexPositionColor(new Vector2(x, y), new Color4(1f, 1f, 0f, 1f)),
-            };
+                int w = rand.Next(32, 128);
+                int h = rand.Next(32, 128);
+                int x = rand.Next(0, windowWidth - w);
+                int y = rand.Next(0, windowHeight - h);
 
-            int[] indeces = new int[] {
-                0, 1, 2, 0, 2, 3
-            };
+                float r = (float)rand.NextDouble();
+                float g = (float)rand.NextDouble();
+                float b = (float)rand.NextDouble();
+
+                vertices[this.vertexCount++] = new VertexPositionColor(new Vector2(x, y + h), new Color4(r, g, b, 1f));
+                vertices[this.vertexCount++] = new VertexPositionColor(new Vector2(x + w, y + h), new Color4(r, g, b, 1f));
+                vertices[this.vertexCount++] = new VertexPositionColor(new Vector2(x + w, y), new Color4(r, g, b, 1f));
+                vertices[this.vertexCount++] = new VertexPositionColor(new Vector2(x, y), new Color4(r, g, b, 1f));
+
+            }
+
+            int[] indeces = new int[boxCount * 6];
+            this.IndexCount = 0;
+            this.vertexCount = 0;
+
+            for (int i = 0; i < boxCount; i++)
+            {
+                indeces[this.IndexCount++] = 0 + this.vertexCount;
+                indeces[this.IndexCount++] = 1 + this.vertexCount;
+                indeces[this.IndexCount++] = 2 + this.vertexCount;
+                indeces[this.IndexCount++] = 0 + this.vertexCount;
+                indeces[this.IndexCount++] = 2 + this.vertexCount;
+                indeces[this.IndexCount++] = 3 + this.vertexCount;
+
+                this.vertexCount += 4;
+            }
 
 
-            this.vertexBuffer = new VertexBuffer(VertexPositionColor.VertexInfo, vertices.Length, false);
+            this.vertexBuffer = new VertexBuffer(VertexPositionColor.VertexInfo, vertices.Length, true);
             this.vertexBuffer.SetData(vertices, vertices.Length);
 
             this.indexBuffer = new IndexBuffer(indeces.Length, true);
             this.indexBuffer.SetData(indeces, indeces.Length);
 
-            int vertexSizeInBytes = VertexPositionColor.VertexInfo.SizeInBytes;
+            this.vertexArray = new VertexArray(this.vertexBuffer);
 
-            this.vertexArrayHandle = GL.GenVertexArray();
-            GL.BindVertexArray(this.vertexArrayHandle);
-
-            GL.BindBuffer(BufferTarget.ArrayBuffer, this.vertexBuffer.VertexBufferHandle);
-
-            VertexAttribute attr0 = VertexPositionColor.VertexInfo.VertexAttributes[0];
-            VertexAttribute attr1 = VertexPositionColor.VertexInfo.VertexAttributes[1];
-
-            GL.VertexAttribPointer(attr0.Index, attr0.ComponentCount, VertexAttribPointerType.Float, false, vertexSizeInBytes, attr0.Offset);
-            GL.VertexAttribPointer(attr1.Index, attr1.ComponentCount, VertexAttribPointerType.Float, false, vertexSizeInBytes, attr1.Offset);
-
-            GL.EnableVertexAttribArray(attr0.Index);
-            GL.EnableVertexAttribArray(attr1.Index);
-
-            GL.BindVertexArray(0);
 
             string vertexShaderCode =
             @"
@@ -163,9 +177,7 @@ namespace Physic_Engine
 
         protected override void OnUnload()
         {
-            GL.BindVertexArray(0);
-            GL.DeleteVertexArray(this.vertexArrayHandle);
-
+            this.vertexArray?.Dispose();
             this.indexBuffer?.Dispose();
             this.vertexBuffer?.Dispose();
 
@@ -185,9 +197,9 @@ namespace Physic_Engine
             GL.Clear(ClearBufferMask.ColorBufferBit);
 
             GL.UseProgram(this.shaderProgramHandle);
-            GL.BindVertexArray(this.vertexArrayHandle);
+            GL.BindVertexArray(this.vertexArray.VertexArrayHandle);
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, this.indexBuffer.IndexBufferHandle);
-            GL.DrawElements(PrimitiveType.Triangles, 6, DrawElementsType.UnsignedInt, 0);
+            GL.DrawElements(PrimitiveType.Triangles, this.IndexCount, DrawElementsType.UnsignedInt, 0);
 
             this.Context.SwapBuffers();
             base.OnRenderFrame(args);
