@@ -11,7 +11,7 @@ namespace Physic_Engine
         private IndexBuffer? indexBuffer;
         private VertexBuffer? vertexBuffer;
         private VertexArray? vertexArray;
-        private int shaderProgramHandle;
+        private ShaderProgram shaderProgram = null!;
 
         private int vertexCount;
         private int IndexCount;
@@ -133,41 +133,14 @@ namespace Physic_Engine
                 pixelColor = vColor;
             }";
 
+            this.shaderProgram = new ShaderProgram(vertexShaderCode, pixelShaderCode);
 
-            int vertexShaderHandle = GL.CreateShader(ShaderType.VertexShader);
-            GL.ShaderSource(vertexShaderHandle, vertexShaderCode);
-            GL.CompileShader(vertexShaderHandle);
-
-            // Check for errors in the vertex shader
-            string vertexShaderInfo = GL.GetShaderInfoLog(vertexShaderHandle);
-            if (vertexShaderInfo != string.Empty) Console.WriteLine(vertexShaderInfo);
-
-            int pixelShaderHandle = GL.CreateShader(ShaderType.FragmentShader);
-            GL.ShaderSource(pixelShaderHandle, pixelShaderCode);
-            GL.CompileShader(pixelShaderHandle);
-
-            // Check for errors in the pixel shader
-            string pixelShaderInfo = GL.GetShaderInfoLog(pixelShaderHandle);
-            if (pixelShaderInfo != string.Empty) Console.WriteLine(pixelShaderInfo);
-
-            this.shaderProgramHandle = GL.CreateProgram();
-
-            GL.AttachShader(this.shaderProgramHandle, vertexShaderHandle);
-            GL.AttachShader(this.shaderProgramHandle, pixelShaderHandle);
-
-            GL.LinkProgram(this.shaderProgramHandle);
-
-            GL.DetachShader(this.shaderProgramHandle, vertexShaderHandle);
-            GL.DetachShader(this.shaderProgramHandle, pixelShaderHandle);
-
-            GL.DeleteShader(vertexShaderHandle);
-            GL.DeleteShader(pixelShaderHandle);
 
             int[] viewport = new int[4];
             GL.GetInteger(GetPName.Viewport, viewport);
 
-            GL.UseProgram(this.shaderProgramHandle);
-            int ViewportSizeUniformLocation = GL.GetUniformLocation(this.shaderProgramHandle, "ViewportSize");
+            GL.UseProgram(this.shaderProgram.ShaderProgramHandle);
+            int ViewportSizeUniformLocation = GL.GetUniformLocation(this.shaderProgram.ShaderProgramHandle, "ViewportSize");
             GL.Uniform2(ViewportSizeUniformLocation, (float)viewport[2], (float)viewport[3]);
             GL.UseProgram(0);
 
@@ -181,8 +154,6 @@ namespace Physic_Engine
             this.indexBuffer?.Dispose();
             this.vertexBuffer?.Dispose();
 
-            GL.UseProgram(0);
-            GL.DeleteProgram(this.shaderProgramHandle);
 
             base.OnUnload();
         }
@@ -196,9 +167,9 @@ namespace Physic_Engine
         {
             GL.Clear(ClearBufferMask.ColorBufferBit);
 
-            if (this.shaderProgramHandle != 0 && this.vertexArray != null && this.indexBuffer != null)
+            if (this.shaderProgram.ShaderProgramHandle != 0 && this.vertexArray != null && this.indexBuffer != null)
             {
-                GL.UseProgram(this.shaderProgramHandle);
+                GL.UseProgram(this.shaderProgram.ShaderProgramHandle);
                 GL.BindVertexArray(this.vertexArray.VertexArrayHandle);
                 GL.BindBuffer(BufferTarget.ElementArrayBuffer, this.indexBuffer.IndexBufferHandle);
                 GL.DrawElements(PrimitiveType.Triangles, this.IndexCount, DrawElementsType.UnsignedInt, 0);
