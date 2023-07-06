@@ -8,9 +8,9 @@ namespace Physic_Engine
 {
     public class Game : GameWindow
     {
-        private IndexBuffer indexBuffer;
-        private VertexBuffer vertexBuffer;
-        private VertexArray vertexArray;
+        private IndexBuffer? indexBuffer;
+        private VertexBuffer? vertexBuffer;
+        private VertexArray? vertexArray;
         private int shaderProgramHandle;
 
         private int vertexCount;
@@ -196,10 +196,13 @@ namespace Physic_Engine
         {
             GL.Clear(ClearBufferMask.ColorBufferBit);
 
-            GL.UseProgram(this.shaderProgramHandle);
-            GL.BindVertexArray(this.vertexArray.VertexArrayHandle);
-            GL.BindBuffer(BufferTarget.ElementArrayBuffer, this.indexBuffer.IndexBufferHandle);
-            GL.DrawElements(PrimitiveType.Triangles, this.IndexCount, DrawElementsType.UnsignedInt, 0);
+            if (this.shaderProgramHandle != 0 && this.vertexArray != null && this.indexBuffer != null)
+            {
+                GL.UseProgram(this.shaderProgramHandle);
+                GL.BindVertexArray(this.vertexArray.VertexArrayHandle);
+                GL.BindBuffer(BufferTarget.ElementArrayBuffer, this.indexBuffer.IndexBufferHandle);
+                GL.DrawElements(PrimitiveType.Triangles, this.IndexCount, DrawElementsType.UnsignedInt, 0);
+            }
 
             this.Context.SwapBuffers();
             base.OnRenderFrame(args);
