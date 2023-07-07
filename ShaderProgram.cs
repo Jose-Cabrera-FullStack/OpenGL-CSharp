@@ -3,12 +3,43 @@ using OpenTK.Graphics.OpenGL;
 
 namespace Physic_Engine
 {
+    public readonly struct ShaderUniform
+    {
+        public readonly string Name;
+        public readonly int Location;
+        public readonly ActiveUniformType Type;
+
+        public ShaderUniform(string name, int location, ActiveUniformType type)
+        {
+            this.Name = name;
+            this.Location = location;
+            this.Type = type;
+        }
+    }
+
+    public readonly struct ShaderAttribute
+    {
+        public readonly string Name;
+        public readonly int Location;
+        public readonly ActiveAttribType Type;
+
+        public ShaderAttribute(string name, int location, ActiveAttribType type)
+        {
+            this.Name = name;
+            this.Location = location;
+            this.Type = type;
+        }
+    }
+
     public sealed class ShaderProgram : IDisposable
     {
         private bool disposed;
         public readonly int ShaderProgramHandle;
         public readonly int VertexShaderHandle;
         public readonly int PixelShaderHandle;
+
+        private readonly ShaderUniform[] uniforms;
+        private readonly ShaderAttribute[] attributes;
 
         public ShaderProgram(string vertexShaderCode, string pixelShaderCode)
         {
@@ -25,6 +56,10 @@ namespace Physic_Engine
             }
 
             this.ShaderProgramHandle = ShaderProgram.CreateLinkProgram(this.VertexShaderHandle, this.PixelShaderHandle);
+
+            this.uniforms = ShaderProgram.CreateUniformList(this.ShaderProgramHandle);
+
+            this.attributes = ShaderProgram.CreateAttributeList(this.ShaderProgramHandle);
         }
 
         ~ShaderProgram()
@@ -47,6 +82,69 @@ namespace Physic_Engine
 
             this.disposed = true;
             GC.SuppressFinalize(this);
+        }
+
+
+        public ShaderUniform[] GetUniformList()
+        {
+            ShaderUniform[] result = new ShaderUniform[this.uniforms.Length];
+            Array.Copy(this.uniforms, result, this.uniforms.Length);
+            return result;
+        }
+
+        public ShaderAttribute[] GetAttributeList()
+        {
+            ShaderAttribute[] result = new ShaderAttribute[this.attributes.Length];
+            Array.Copy(this.attributes, result, this.attributes.Length);
+            return result;
+        }
+
+        public void SetUniform(string name, float v1)
+        {
+            if (!this.GetShaderUniform(name, out ShaderUniform uniform))
+            {
+                throw new ArgumentException(string.Format("Uniform {0} does not exist", name));
+            }
+
+            if (uniform.Type == ActiveUniformType.Float)
+            {
+                throw new ArgumentException("Uniform is not a float");
+            }
+
+            GL.UseProgram(this.ShaderProgramHandle);
+            GL.Uniform1(uniform.Location, v1);
+            GL.UseProgram(0);
+        }
+
+        public void SetUniform(string name, float v1, float v2)
+        {
+            if (!this.GetShaderUniform(name, out ShaderUniform uniform))
+            {
+                throw new ArgumentException(string.Format("Uniform {0} does not exist", name));
+            }
+
+            if (uniform.Type == ActiveUniformType.FloatVec2)
+            {
+                throw new ArgumentException("Uniform is not a float");
+            }
+
+            GL.UseProgram(this.ShaderProgramHandle);
+            GL.Uniform2(uniform.Location, v1, v2);
+            GL.UseProgram(0);
+        }
+
+        private bool GetShaderUniform(string name, out ShaderUniform uniform)
+        {
+            uniform = new ShaderUniform();
+            for (int i = 0; i < this.uniforms.Length; i++)
+            {
+                uniform = this.uniforms[i];
+                if (uniform.Name == name)
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         public static bool CompileVertexShader(string vertexShaderCode, out int vertexShaderHandle, out string errorMessage)
@@ -99,6 +197,39 @@ namespace Physic_Engine
             GL.DetachShader(shaderProgramHandle, pixelShaderHandle);
 
             return shaderProgramHandle;
+        }
+
+        public static ShaderUniform[] CreateUniformList(int shaderProgramHandle)
+        {
+            GL.GetProgram(shaderProgramHandle, GetProgramParameterName.ActiveUniforms, out int uniformCount);
+
+            ShaderUniform[] uniforms = new ShaderUniform[uniformCount];
+
+            for (int i = 0; i < uniformCount; i++)
+            {
+                GL.GetActiveUniform(shaderProgramHandle, i, 256, out _, out _, out ActiveUniformType type, out string name);
+                int location = GL.GetUniformLocation(shaderProgramHandle, name);
+                uniforms[i] = new ShaderUniform(name, location, type);
+            }
+
+            return uniforms;
+        }
+
+
+        public static ShaderAttribute[] CreateAttributeList(int shaderProgramHandle)
+        {
+            GL.GetProgram(shaderProgramHandle, GetProgramParameterName.ActiveAttributes, out int attributeCount);
+
+            ShaderAttribute[] attributes = new ShaderAttribute[attributeCount];
+
+            for (int i = 0; i < attributeCount; i++)
+            {
+                GL.GetActiveAttrib(shaderProgramHandle, i, 256, out _, out _, out ActiveAttribType type, out string name);
+                int location = GL.GetAttribLocation(shaderProgramHandle, name);
+                attributes[i] = new ShaderAttribute(name, location, type);
+            }
+
+            return attributes;
         }
     }
 }
