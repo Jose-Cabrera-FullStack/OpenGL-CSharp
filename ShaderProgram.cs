@@ -106,7 +106,7 @@ namespace Physic_Engine
                 throw new ArgumentException(string.Format("Uniform {0} does not exist", name));
             }
 
-            if (uniform.Type == ActiveUniformType.Float)
+            if (uniform.Type != ActiveUniformType.Float)
             {
                 throw new ArgumentException("Uniform is not a float");
             }
@@ -123,9 +123,9 @@ namespace Physic_Engine
                 throw new ArgumentException(string.Format("Uniform {0} does not exist", name));
             }
 
-            if (uniform.Type == ActiveUniformType.FloatVec2)
+            if (uniform.Type != ActiveUniformType.FloatVec2)
             {
-                throw new ArgumentException("Uniform is not a float");
+                throw new ArgumentException("Uniform is not a FloatVec2");
             }
 
             GL.UseProgram(this.ShaderProgramHandle);

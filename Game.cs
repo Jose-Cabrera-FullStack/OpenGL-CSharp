@@ -16,6 +16,9 @@ namespace Physic_Engine
         private int vertexCount;
         private int IndexCount;
 
+        private float colorFactor = 1.0f;
+        private float deltaColorFactor = 1f / 240f;
+
         public Game(int width = 1280, int height = 768, string title = "Physic Engine") : base(
             GameWindowSettings.Default,
             new NativeWindowSettings()
@@ -105,6 +108,7 @@ namespace Physic_Engine
             #version 330 core
 
             uniform vec2 ViewportSize;
+            uniform float ColorFactor;
 
             layout (location = 0) in vec2 aPosition;
             layout (location = 1) in vec4 aColor;
@@ -117,7 +121,7 @@ namespace Physic_Engine
                 float ny = aPosition.y / ViewportSize.y * 2 - 1;
                 gl_Position = vec4(nx, ny, 0, 1);
 
-                vColor = aColor;
+                vColor = aColor * ColorFactor;
             }
             ";
 
@@ -139,11 +143,8 @@ namespace Physic_Engine
             int[] viewport = new int[4];
             GL.GetInteger(GetPName.Viewport, viewport);
 
-            GL.UseProgram(this.shaderProgram.ShaderProgramHandle);
-            int ViewportSizeUniformLocation = GL.GetUniformLocation(this.shaderProgram.ShaderProgramHandle, "ViewportSize");
-            GL.Uniform2(ViewportSizeUniformLocation, (float)viewport[2], (float)viewport[3]);
-            GL.UseProgram(0);
-
+            this.shaderProgram.SetUniform("ViewportSize", (float)viewport[2], (float)viewport[3]);
+            this.shaderProgram.SetUniform("ColorFactor", this.colorFactor);
 
             base.OnLoad();
         }
@@ -160,6 +161,23 @@ namespace Physic_Engine
 
         protected override void OnUpdateFrame(FrameEventArgs args)
         {
+
+            this.colorFactor += this.deltaColorFactor;
+
+            if (this.colorFactor >= 1f)
+            {
+                this.colorFactor = 1f;
+                this.deltaColorFactor *= -1;
+            }
+
+            if (this.colorFactor <= 0f)
+            {
+                this.colorFactor = 0f;
+                this.deltaColorFactor *= -1;
+            }
+
+            this.shaderProgram.SetUniform("ColorFactor", this.colorFactor);
+
             base.OnUpdateFrame(args);
         }
 
